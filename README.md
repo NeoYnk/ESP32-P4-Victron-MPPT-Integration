@@ -17,18 +17,24 @@ Dieses Projekt verbindet einen **ESP32-P4 mit POE/Ethernet** mit **Home Assistan
 
 ```
 esphome/
-├── esp32-p4-victron-mppt.yaml       # Hauptkonfiguration (Standard)
-├── esp32-p4-victron-mppt-full.yaml  # Erweitert mit Custom Component für 0x2015
-├── secrets.yaml.example              # Vorlage für Secrets
+├── esp32-p4-victron-mppt.yaml         # Hauptkonfiguration (Online, GitHub)
+├── esp32-p4-victron-mppt-full.yaml    # Erweitert mit Custom Component (Online)
+├── esp32-p4-victron-mppt-offline.yaml # OFFLINE Version (keine GitHub-Abhängigkeit)
+├── setup-offline.sh                    # Setup-Skript für Offline-Installation
+├── secrets.yaml.example                # Vorlage für Secrets
 ├── .gitignore
+├── components/                         # Lokale Komponenten (nach setup-offline.sh)
+│   └── m3_vedirect/                    # VE.Direct Komponente (lokal)
 └── custom_components/
-    └── victron_charge_limit/         # Custom Component für Register 0x2015
+    └── victron_charge_limit/           # Custom Component für Register 0x2015
         ├── __init__.py
         ├── victron_charge_limit.h
         └── victron_charge_limit.cpp
 ```
 
 ### Installation
+
+#### Option A: Online (mit GitHub-Zugriff)
 
 1. **Secrets erstellen:**
    ```bash
@@ -47,6 +53,28 @@ esphome/
 3. **ESPHome flashen:**
    ```bash
    esphome run esp32-p4-victron-mppt-full.yaml
+   ```
+
+#### Option B: Offline (ohne GitHub-Zugriff)
+
+1. **Einmalig mit Internetzugang - Komponenten herunterladen:**
+   ```bash
+   cd esphome
+   ./setup-offline.sh
+   ```
+   Dies lädt die `m3_vedirect` Komponente lokal herunter.
+
+2. **Secrets erstellen:**
+   ```bash
+   cp secrets.yaml.example secrets.yaml
+   # API Key generieren und eintragen
+   ```
+
+3. **GPIO-Pins anpassen** (wie bei Option A)
+
+4. **ESPHome flashen (offline):**
+   ```bash
+   esphome run esp32-p4-victron-mppt-offline.yaml
    ```
 
 ### Verfügbare Sensoren (Lesbar)
