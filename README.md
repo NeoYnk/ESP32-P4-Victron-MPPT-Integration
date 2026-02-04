@@ -200,36 +200,7 @@ automation:
           value: 50
 ```
 
-#### 4. SOC-basierte Ladesteuerung (mit BMS)
-
-```yaml
-automation:
-  - alias: "MPPT SOC-basierte Ladung"
-    description: "Steuert Ladestrom basierend auf Batterieladezustand"
-    trigger:
-      - platform: state
-        entity_id: sensor.victron_mppt_state_of_charge
-    action:
-      - service: number.set_value
-        target:
-          entity_id: number.victron_mppt_charge_current_limit
-        data:
-          value: >
-            {% set soc = states('sensor.victron_mppt_state_of_charge') | float(50) %}
-            {% if soc < 20 %}
-              50
-            {% elif soc < 50 %}
-              40
-            {% elif soc < 80 %}
-              30
-            {% elif soc < 95 %}
-              20
-            {% else %}
-              5
-            {% endif %}
-```
-
-#### 5. Fehlerbehandlung und Benachrichtigung
+#### 4. Fehlerbehandlung und Benachrichtigung
 
 ```yaml
 automation:
@@ -261,7 +232,7 @@ automation:
             Zeit: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
 ```
 
-#### 6. Tägliche Ertragsstatistik
+#### 5. Tägliche Ertragsstatistik
 
 ```yaml
 automation:
@@ -279,7 +250,7 @@ automation:
             Gesamtertrag: {{ states('sensor.victron_mppt_total_yield') }} kWh
 ```
 
-#### 7. Nulleinspeisung / Zero Export
+#### 6. Nulleinspeisung / Zero Export
 
 ```yaml
 automation:
@@ -305,7 +276,7 @@ automation:
             {{ [current_limit + increase, 50] | min }}
 ```
 
-#### 8. Wärmepumpen-Integration
+#### 7. Wärmepumpen-Integration
 
 ```yaml
 automation:
@@ -335,28 +306,7 @@ automation:
           value: 50
 ```
 
-#### 9. Lovelace Dashboard Card (UI)
-
-```yaml
-# In configuration.yaml oder lovelace dashboard
-type: entities
-title: Victron MPPT
-entities:
-  - entity: sensor.victron_mppt_panel_power
-    name: PV Leistung
-  - entity: sensor.victron_mppt_battery_voltage
-    name: Batteriespannung
-  - entity: sensor.victron_mppt_battery_current
-    name: Batteriestrom
-  - entity: number.victron_mppt_charge_current_limit
-    name: Ladestrom Limit
-  - entity: text_sensor.victron_mppt_device_state
-    name: Status
-  - entity: sensor.victron_mppt_yield_today
-    name: Ertrag heute
-```
-
-#### 10. Input Number Helper für manuelle Steuerung
+#### 8. Input Number Helper für manuelle Steuerung
 
 ```yaml
 # In configuration.yaml
