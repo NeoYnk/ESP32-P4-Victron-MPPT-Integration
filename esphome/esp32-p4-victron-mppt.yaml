@@ -1,0 +1,498 @@
+# ESP32-P4 POE Ethernet - Victron MPPT VE.Direct Integration
+# Connects to Home Assistant via Ethernet/PoE
+# Reads Victron MPPT via VE.Direct (USB-OTG)
+
+substitutions:
+  device_name: "victron-mppt"
+  friendly_name: "Victron MPPT"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32-p4-evboard
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+    version: recommended
+
+# External component for Victron VE.Direct
+external_components:
+  - source: github://krahabb/esphome-victron-vedirect
+    components: [m3_vedirect]
+
+# Logging
+logger:
+  hardware_uart: UART0
+  level: INFO
+
+# Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# OTA Updates
+ota:
+  platform: esphome
+  password: !secret ota_password
+
+# Ethernet Configuration for ESP32-P4 with PoE
+# Adjust pins according to your specific board (e.g., Waveshare ESP32-P4-ETH)
+ethernet:
+  type: IP101
+  mdc_pin: GPIO31
+  mdio_pin: GPIO52
+  power_pin: GPIO51
+  clk:
+    mode: CLK_EXT_IN
+    pin: GPIO50
+  phy_addr: 1
+
+# UART for VE.Direct (USB-OTG via VE.Direct to USB adapter)
+# VE.Direct uses 19200 baud, 8N1
+uart:
+  id: uart_vedirect
+  tx_pin: GPIO14  # Adjust to your USB-OTG TX pin
+  rx_pin: GPIO15  # Adjust to your USB-OTG RX pin
+  baud_rate: 19200
+
+# VE.Direct Component Configuration
+m3_vedirect:
+  - id: vedirect_mppt
+    uart_id: uart_vedirect
+    name: "${friendly_name}"
+    throttle: 5s
+    # Enable HEX protocol for full register access
+    textframe:
+      auto_create_entities: false
+    hexframe:
+      auto_create_entities: false
+      ping_timeout: 2min
+
+# =============================================================================
+# SENSORS - Readable values from MPPT
+# =============================================================================
+
+sensor:
+  # ----- Battery/DC Channel -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Battery Voltage (0xED8D)
+      - register: DC_CHANNEL1_VOLTAGE
+        name: "${friendly_name} Battery Voltage"
+        id: battery_voltage
+
+      # Battery Current (0xED8F)
+      - register: DC_CHANNEL1_CURRENT
+        name: "${friendly_name} Battery Current"
+        id: battery_current
+
+      # Battery Power (0xED8E)
+      - register: DC_CHANNEL1_POWER
+        name: "${friendly_name} Battery Power"
+        id: battery_power
+
+      # Charger Voltage (0xEDD5)
+      - register: CHARGER_VOLTAGE
+        name: "${friendly_name} Charger Voltage"
+
+      # Charger Current (0xEDD7)
+      - register: CHARGER_CURRENT
+        name: "${friendly_name} Charger Current"
+
+  # ----- Panel/PV Values -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Panel Voltage (0xEDBB)
+      - register: PANEL_VOLTAGE
+        name: "${friendly_name} Panel Voltage"
+        id: panel_voltage
+
+      # Panel Current (0xEDBD)
+      - register: PANEL_CURRENT
+        name: "${friendly_name} Panel Current"
+        id: panel_current
+
+      # Panel Power (0xEDBC)
+      - register: PANEL_POWER
+        name: "${friendly_name} Panel Power"
+        id: panel_power
+
+      # Panel Maximum Voltage (0xEDB8) - constant
+      - register: PANEL_MAXIMUM_VOLTAGE
+        name: "${friendly_name} Panel Max Voltage"
+
+      # Panel Maximum Current (0xEDBF) - constant
+      - register: PANEL_MAXIMUM_CURRENT
+        name: "${friendly_name} Panel Max Current"
+
+  # ----- Multi-Tracker Support (if applicable) -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Tracker 1
+      - register: PANEL_VOLTAGE_1
+        name: "${friendly_name} Tracker 1 Voltage"
+      - register: PANEL_CURRENT_1
+        name: "${friendly_name} Tracker 1 Current"
+      - register: PANEL_POWER_1
+        name: "${friendly_name} Tracker 1 Power"
+
+      # Tracker 2
+      - register: PANEL_VOLTAGE_2
+        name: "${friendly_name} Tracker 2 Voltage"
+      - register: PANEL_CURRENT_2
+        name: "${friendly_name} Tracker 2 Current"
+      - register: PANEL_POWER_2
+        name: "${friendly_name} Tracker 2 Power"
+
+  # ----- Load Output -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Load Current (0xEDAD)
+      - register: LOAD_CURRENT
+        name: "${friendly_name} Load Current"
+
+  # ----- Yield/Energy Statistics -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Yield Today (0xEDD3)
+      - register: YIELD_TODAY
+        name: "${friendly_name} Yield Today"
+
+      # Yield Yesterday (0xEDD1)
+      - register: YIELD_YESTERDAY
+        name: "${friendly_name} Yield Yesterday"
+
+      # Maximum Power Today (0xEDD2)
+      - register: MAXIMUM_POWER_TODAY
+        name: "${friendly_name} Max Power Today"
+
+      # Maximum Power Yesterday (0xEDD0)
+      - register: MAXIMUM_POWER_YESTERDAY
+        name: "${friendly_name} Max Power Yesterday"
+
+      # User Yield Total (0xEDDC)
+      - register: USER_YIELD
+        name: "${friendly_name} Total Yield"
+
+      # System Yield Total (0xEDDD)
+      - register: SYSTEM_YIELD
+        name: "${friendly_name} System Total Yield"
+
+  # ----- Temperature -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Battery Temperature (0xEDEC)
+      - register: BAT_TEMPERATURE
+        name: "${friendly_name} Battery Temperature"
+
+      # Internal Temperature (0xEDDB)
+      - register: CHR_INTERNAL_TEMPERATURE
+        name: "${friendly_name} Internal Temperature"
+
+  # ----- Battery Ripple -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Battery Ripple Voltage (0xED8B)
+      - register: BATTERY_RIPPLE_VOLTAGE
+        name: "${friendly_name} Battery Ripple Voltage"
+
+  # ----- State of Charge (if available via BMS) -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # SOC (0x0FFF)
+      - register: SOC
+        name: "${friendly_name} State of Charge"
+
+      # Time to Go (0x0FFE)
+      - register: TTG
+        name: "${friendly_name} Time to Go"
+
+  # ----- Time of Day -----
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Time of Day (0x2031)
+      - register: TIME_OF_DAY
+        name: "${friendly_name} Time of Day"
+
+  # ----- WiFi Signal (diagnostic) -----
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+
+# =============================================================================
+# TEXT SENSORS - Status and enum values
+# =============================================================================
+
+text_sensor:
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Device State (0x0201) - Off, Low power, Fault, Bulk, Absorption, Float, etc.
+      - register: DEVICE_STATE
+        name: "${friendly_name} Device State"
+        id: device_state
+
+      # Charger Device State (0x020A)
+      - register: CHARGER_DEVICE_STATE
+        name: "${friendly_name} Charger State"
+
+      # MPPT Tracker Mode (0xEDB3) - Off, Voltage/Current limited, MPP tracker
+      - register: MPPT_TRACKER_MODE
+        name: "${friendly_name} MPPT Mode"
+
+      # Tracker 1 Mode (0xECC3)
+      - register: MPPT_TRACKER_MODE_1
+        name: "${friendly_name} Tracker 1 Mode"
+
+      # Tracker 2 Mode (0xECD3)
+      - register: MPPT_TRACKER_MODE_2
+        name: "${friendly_name} Tracker 2 Mode"
+
+      # Charger Error Code (0xEDDA)
+      - register: CHR_ERROR_CODE
+        name: "${friendly_name} Error Code"
+
+      # Device Off Reason (0x0205)
+      - register: DEVICE_OFF_REASON
+        name: "${friendly_name} Off Reason"
+
+      # Device Off Reason 2 (0x0207)
+      - register: DEVICE_OFF_REASON_2
+        name: "${friendly_name} Off Reason 2"
+
+  # Device Info
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Serial Number (0x010A)
+      - register: SERIAL_NUMBER
+        name: "${friendly_name} Serial Number"
+
+      # Model Name (0x010B)
+      - register: MODEL_NAME
+        name: "${friendly_name} Model"
+
+      # Product ID (0x0100)
+      - register: PRODUCT_ID
+        name: "${friendly_name} Product ID"
+
+      # Firmware Version (0x0102)
+      - register: APP_VER
+        name: "${friendly_name} Firmware Version"
+
+# =============================================================================
+# BINARY SENSORS - Boolean states
+# =============================================================================
+
+binary_sensor:
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Solar Activity (0x2030)
+      - register: SOLAR_ACTIVITY
+        name: "${friendly_name} Solar Activity"
+
+      # Load Output State (0xEDA8)
+      - register: LOAD_OUTPUT_STATE
+        name: "${friendly_name} Load Output"
+
+      # BMS Present (0xEDE8)
+      - register: BMS_PRESENT
+        name: "${friendly_name} BMS Present"
+
+# =============================================================================
+# NUMBER - Writable configuration values
+# =============================================================================
+
+number:
+  # ----- CRITICAL: Charge Current Limit (0x2015) -----
+  # This is the main writable value as requested
+  # Note: This register may need custom implementation if not in standard component
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Maximum Battery Current (0xEDF0) - Alternative to 0x2015
+      # Use this for persistent current limit setting
+      - register: BAT_MAX_CURRENT
+        name: "${friendly_name} Max Battery Current"
+        id: bat_max_current
+
+      # Battery Absorption Voltage (0xEDF7)
+      - register: BAT_ABSORPTION_VOLTAGE
+        name: "${friendly_name} Absorption Voltage"
+
+      # Battery Float Voltage (0xEDF6)
+      - register: BAT_FLOAT_VOLTAGE
+        name: "${friendly_name} Float Voltage"
+
+      # Battery Equalisation Voltage (0xEDF4)
+      - register: BAT_EQUALISATION_VOLTAGE
+        name: "${friendly_name} Equalisation Voltage"
+
+      # Battery Storage Voltage (0xEDF5)
+      - register: BAT_STORAGE_VOLTAGE
+        name: "${friendly_name} Storage Voltage"
+
+      # Absorption Time Limit (0xEDFB)
+      - register: BAT_ABSORPTION_LIMIT
+        name: "${friendly_name} Absorption Time Limit"
+
+      # Bulk Time Limit (0xEDFC)
+      - register: BAT_BULK_LIMIT
+        name: "${friendly_name} Bulk Time Limit"
+
+      # Re-bulk Voltage Offset (0xEDE2)
+      - register: REBULK_VOLTAGE_OFFSET
+        name: "${friendly_name} Re-bulk Voltage Offset"
+
+      # Equalisation Duration (0xEDE3)
+      - register: EQUALISATION_DURATION
+        name: "${friendly_name} Equalisation Duration"
+
+      # Equalisation Current Level (0xEDE4)
+      - register: EQUALISATION_CURRENT_LEVEL
+        name: "${friendly_name} Equalisation Current Level"
+
+      # Low Temperature Charge Current (0xEDE6)
+      - register: LOW_TEMP_CHARGE_CURRENT
+        name: "${friendly_name} Low Temp Charge Current"
+
+      # Tail Current (0xEDE7)
+      - register: TAIL_CURRENT
+        name: "${friendly_name} Tail Current"
+
+      # Low Temperature Level (0xEDE0)
+      - register: BAT_LOW_TEMP_LEVEL
+        name: "${friendly_name} Low Temperature Level"
+
+      # Temperature Compensation (0xEDF2)
+      - register: BAT_TEMPERATURE_COMPENSATION
+        name: "${friendly_name} Temp Compensation"
+
+      # Voltage Compensation (0xEDCA)
+      - register: VOLTAGE_COMPENSATION
+        name: "${friendly_name} Voltage Compensation"
+
+      # Automatic Equalisation Mode (0xEDFD)
+      - register: AUTOMATIC_EQUALISATION_MODE
+        name: "${friendly_name} Auto Equalisation Mode"
+
+      # Alarm Low Voltage Set (0x0320)
+      - register: ALARM_LOW_VOLTAGE_SET
+        name: "${friendly_name} Alarm Low Voltage Set"
+
+      # Alarm Low Voltage Clear (0x0321)
+      - register: ALARM_LOW_VOLTAGE_CLEAR
+        name: "${friendly_name} Alarm Low Voltage Clear"
+
+      # Shutdown Low Voltage Set (0x2210)
+      - register: SHUTDOWN_LOW_VOLTAGE_SET
+        name: "${friendly_name} Shutdown Low Voltage"
+
+# =============================================================================
+# SELECT - Enum configuration values
+# =============================================================================
+
+select:
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Device Mode (0x0200) - On/Off/Charger Only
+      - register: DEVICE_MODE
+        name: "${friendly_name} Device Mode"
+
+      # Battery Type (0xEDF1)
+      - register: BAT_TYPE
+        name: "${friendly_name} Battery Type"
+
+      # Battery Voltage Setting (0xEDEA) - 12V/24V/36V/48V
+      - register: BAT_VOLTAGE_SETTING
+        name: "${friendly_name} Battery Voltage Setting"
+
+      # Relay Mode (0x034F)
+      - register: RELAY_MODE
+        name: "${friendly_name} Relay Mode"
+
+      # Remote Input Mode Config (0xD0C0)
+      - register: REMOTE_INPUT_MODE_CONFIG
+        name: "${friendly_name} Remote Input Mode"
+
+# =============================================================================
+# SWITCH - Boolean configuration values
+# =============================================================================
+
+switch:
+  - platform: m3_vedirect
+    vedirect_id: vedirect_mppt
+    vedirect_entities:
+      # Adaptive Mode (0xEDFE)
+      - register: ADAPTIVE_MODE
+        name: "${friendly_name} Adaptive Mode"
+
+      # Auto Equalise Stop on Voltage (0xEDE5)
+      - register: AUTO_EQUALISE_STOP_ON_VOLTAGE
+        name: "${friendly_name} Auto Equalise Stop on Voltage"
+
+      # BMS Present (0xEDE8)
+      - register: BMS_PRESENT
+        name: "${friendly_name} BMS Present Setting"
+
+      # Relay Control (0x034E)
+      - register: RELAY_CONTROL
+        name: "${friendly_name} Relay Control"
+
+      # Alarm Buzzer (0xEEFC)
+      - register: ALARM_BUZZER
+        name: "${friendly_name} Alarm Buzzer"
+
+      # BLE Mode (0x0090)
+      - register: BLE_MODE
+        name: "${friendly_name} BLE Mode"
+
+# =============================================================================
+# CUSTOM: Charge Current Limit Register 0x2015
+# This register is specifically for dynamic/remote current limiting
+# =============================================================================
+
+# If register 0x2015 is not available in the component, use this custom template:
+# The BAT_MAX_CURRENT (0xEDF0) above is the persistent alternative
+
+# For register 0x2015 (network/remote charge current limit):
+# This may require a custom lambda or component extension
+# Contact the component author or use the following approach:
+
+# Custom number entity for 0x2015 if needed:
+# number:
+#   - platform: template
+#     name: "${friendly_name} Charge Current Limit (0x2015)"
+#     id: charge_current_limit
+#     min_value: 0
+#     max_value: 100
+#     step: 0.1
+#     unit_of_measurement: "A"
+#     optimistic: true
+#     set_action:
+#       - lambda: |-
+#           // Send HEX command to register 0x2015
+#           // Value is in 0.1A units (un16)
+#           uint16_t value = (uint16_t)(x * 10);
+#           // Implementation depends on component's HEX write capability
+#           ESP_LOGI("vedirect", "Setting charge current limit to %.1f A", x);
+
+# =============================================================================
+# BUTTON - Actions
+# =============================================================================
+
+button:
+  - platform: restart
+    name: "${friendly_name} Restart ESP"
