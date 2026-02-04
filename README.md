@@ -200,7 +200,36 @@ automation:
           value: 50
 ```
 
-#### 4. Fehlerbehandlung und Benachrichtigung
+#### 4. SOC-basierte Ladesteuerung (mit BMS)
+
+```yaml
+automation:
+  - alias: "MPPT SOC-basierte Ladung"
+    description: "Steuert Ladestrom basierend auf Batterieladezustand"
+    trigger:
+      - platform: state
+        entity_id: sensor.victron_mppt_state_of_charge
+    action:
+      - service: number.set_value
+        target:
+          entity_id: number.victron_mppt_charge_current_limit
+        data:
+          value: >
+            {% set soc = states('sensor.victron_mppt_state_of_charge') | float(50) %}
+            {% if soc < 20 %}
+              50
+            {% elif soc < 50 %}
+              40
+            {% elif soc < 80 %}
+              30
+            {% elif soc < 95 %}
+              20
+            {% else %}
+              5
+            {% endif %}
+```
+
+#### 5. Fehlerbehandlung und Benachrichtigung
 
 ```yaml
 automation:
@@ -232,7 +261,7 @@ automation:
             Zeit: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}
 ```
 
-#### 5. Tägliche Ertragsstatistik
+#### 6. Tägliche Ertragsstatistik
 
 ```yaml
 automation:
@@ -250,7 +279,7 @@ automation:
             Gesamtertrag: {{ states('sensor.victron_mppt_total_yield') }} kWh
 ```
 
-#### 6. Nulleinspeisung / Zero Export
+#### 7. Nulleinspeisung / Zero Export
 
 ```yaml
 automation:
@@ -276,7 +305,7 @@ automation:
             {{ [current_limit + increase, 50] | min }}
 ```
 
-#### 7. Wärmepumpen-Integration
+#### 8. Wärmepumpen-Integration
 
 ```yaml
 automation:
@@ -306,7 +335,7 @@ automation:
           value: 50
 ```
 
-#### 8. Input Number Helper für manuelle Steuerung
+#### 9. Input Number Helper für manuelle Steuerung
 
 ```yaml
 # In configuration.yaml
