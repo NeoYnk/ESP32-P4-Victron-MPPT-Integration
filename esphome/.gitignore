@@ -1,0 +1,11 @@
+# ESPHome secrets - NEVER commit!
+secrets.yaml
+
+# Build artifacts
+.esphome/
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
