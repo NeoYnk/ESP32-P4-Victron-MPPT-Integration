@@ -1,7 +1,6 @@
 # ESP32-P4 POE Ethernet - Victron MPPT VE.Direct Integration (OFFLINE Version)
-# All components are local - no GitHub access required
-#
-# SETUP: Run ./setup-offline.sh once while online to download components
+# All components are included locally - NO GitHub access required!
+# Just clone/download this repository and flash directly.
 #
 # This configuration provides:
 # - Full MPPT sensor reading via m3_vedirect component (local)
@@ -23,16 +22,16 @@ esp32:
     version: recommended
 
 # =============================================================================
-# OFFLINE: All components loaded from local paths
+# OFFLINE: All components are included in this repository
+# No external downloads required - works completely offline!
 # =============================================================================
 external_components:
-  # Victron VE.Direct component (local copy)
-  # Download with: ./setup-offline.sh
+  # Victron VE.Direct component (included in components/)
   - source:
       type: local
       path: components
     components: [m3_vedirect]
-  # Custom charge current limit component (local)
+  # Custom charge current limit component (included in custom_components/)
   - source:
       type: local
       path: custom_components

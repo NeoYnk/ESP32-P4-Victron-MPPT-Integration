@@ -22,12 +22,11 @@ Dieses Projekt verbindet einen **ESP32-P4 mit POE/Ethernet** mit **Home Assistan
 esphome/
 ├── esp32-p4-victron-mppt.yaml         # Hauptkonfiguration (Online, GitHub)
 ├── esp32-p4-victron-mppt-full.yaml    # Erweitert mit Custom Component (Online)
-├── esp32-p4-victron-mppt-offline.yaml # OFFLINE Version (keine GitHub-Abhängigkeit)
-├── setup-offline.sh                    # Setup-Skript für Offline-Installation
+├── esp32-p4-victron-mppt-offline.yaml # OFFLINE Version (alle Komponenten enthalten)
 ├── secrets.yaml.example                # Vorlage für Secrets
 ├── .gitignore
-├── components/                         # Lokale Komponenten (nach setup-offline.sh)
-│   └── m3_vedirect/                    # VE.Direct Komponente (lokal)
+├── components/
+│   └── m3_vedirect/                    # VE.Direct Komponente (enthalten!)
 └── custom_components/
     └── victron_charge_limit/           # Custom Component für Register 0x2015
         ├── __init__.py
@@ -58,24 +57,21 @@ esphome/
    esphome run esp32-p4-victron-mppt-full.yaml
    ```
 
-#### Option B: Offline (ohne GitHub-Zugriff)
+#### Option B: Offline (ohne GitHub-Zugriff) - EMPFOHLEN
 
-1. **Einmalig mit Internetzugang - Komponenten herunterladen:**
+Alle Komponenten sind bereits im Repository enthalten - kein Download erforderlich!
+
+1. **Secrets erstellen:**
    ```bash
    cd esphome
-   ./setup-offline.sh
-   ```
-   Dies lädt die `m3_vedirect` Komponente lokal herunter.
-
-2. **Secrets erstellen:**
-   ```bash
    cp secrets.yaml.example secrets.yaml
    # API Key generieren und eintragen
+   openssl rand -base64 32
    ```
 
-3. **GPIO-Pins anpassen** (wie bei Option A)
+2. **GPIO-Pins anpassen** (wie bei Option A)
 
-4. **ESPHome flashen (offline):**
+3. **ESPHome flashen (komplett offline):**
    ```bash
    esphome run esp32-p4-victron-mppt-offline.yaml
    ```
