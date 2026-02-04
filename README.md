@@ -367,6 +367,96 @@ automation:
           value: "{{ states('input_number.mppt_manual_current_limit') | float }}"
 ```
 
+#### 10. Prozentuale Ladestrombegrenzung (0-100%)
+
+```yaml
+# In configuration.yaml
+input_number:
+  mppt_charge_percentage:
+    name: "MPPT Ladestrom Prozent"
+    min: 0
+    max: 100
+    step: 5
+    unit_of_measurement: "%"
+    icon: mdi:percent
+    initial: 100
+
+# Maximaler Ladestrom des MPPT (anpassen an dein Modell)
+input_number:
+  mppt_max_charge_current:
+    name: "MPPT Max Ladestrom"
+    min: 1
+    max: 100
+    step: 1
+    unit_of_measurement: "A"
+    icon: mdi:current-dc
+    initial: 50
+
+automation:
+  - alias: "MPPT Prozentuale Ladestrombegrenzung"
+    description: "Setzt Ladestrom basierend auf Prozentwert (0-100%)"
+    trigger:
+      - platform: state
+        entity_id: input_number.mppt_charge_percentage
+      - platform: state
+        entity_id: input_number.mppt_max_charge_current
+    action:
+      - service: number.set_value
+        target:
+          entity_id: number.victron_mppt_charge_current_limit
+        data:
+          value: >
+            {% set percentage = states('input_number.mppt_charge_percentage') | float(100) %}
+            {% set max_current = states('input_number.mppt_max_charge_current') | float(50) %}
+            {{ (max_current * percentage / 100) | round(1) }}
+
+  # Optional: Schnellauswahl-Buttons
+  - alias: "MPPT Ladung 0% (Aus)"
+    trigger:
+      - platform: state
+        entity_id: input_button.mppt_charge_0
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.mppt_charge_percentage
+        data:
+          value: 0
+
+  - alias: "MPPT Ladung 50%"
+    trigger:
+      - platform: state
+        entity_id: input_button.mppt_charge_50
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.mppt_charge_percentage
+        data:
+          value: 50
+
+  - alias: "MPPT Ladung 100% (Voll)"
+    trigger:
+      - platform: state
+        entity_id: input_button.mppt_charge_100
+    action:
+      - service: input_number.set_value
+        target:
+          entity_id: input_number.mppt_charge_percentage
+        data:
+          value: 100
+
+# Optional: Schnellauswahl-Buttons in configuration.yaml
+input_button:
+  mppt_charge_0:
+    name: "Ladung 0%"
+    icon: mdi:battery-off
+  mppt_charge_50:
+    name: "Ladung 50%"
+    icon: mdi:battery-50
+  mppt_charge_100:
+    name: "Ladung 100%"
+    icon: mdi:battery-charging-100
+```
+
 ### Quellen
 
 - [ESPHome Victron VE.Direct Component](https://github.com/krahabb/esphome-victron-vedirect)
