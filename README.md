@@ -1,7 +1,4 @@
-# Test-Martin
-ESP32 Stuff
-
-## ESP32-P4 Victron MPPT Integration
+# ESP32-P4 Victron MPPT Integration
 
 Dieses Projekt verbindet einen **ESP32-P4 mit POE/Ethernet** mit **Home Assistant** und liest/schreibt Werte von einem **Victron MPPT Laderegler** über VE.Direct.
 
